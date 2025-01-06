@@ -39,21 +39,20 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var dotenv = require("dotenv");
 dotenv.config();
 var openai_1 = require("openai");
+var client = new openai_1.OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+var model = "gpt-4o-mini";
 (function () { return __awaiter(void 0, void 0, void 0, function () {
-    var client, model, personalTrainerAssistance, thread;
+    var personalTrainerAssistance, thread, assistantId, threadId, messageP, message, run, runId, runsRetrieval, messagesResponse, response;
     return __generator(this, function (_a) {
         switch (_a.label) {
-            case 0:
-                client = new openai_1.OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-                model = "gpt-4o-mini";
-                return [4 /*yield*/, client.beta.assistants.create({
-                        name: "Personal Trainer",
-                        instructions: "You are the best personal trainer and nutritionist in the world. You are helping a client who wants to lose weight. You've trained high-caliber athletes and movie stars.",
-                        model: model,
-                    })];
+            case 0: return [4 /*yield*/, client.beta.assistants.create({
+                    name: "Personal Trainer",
+                    instructions: "You are the best personal trainer and nutritionist in the world. You are helping a client who wants to lose weight. You've trained high-caliber athletes and movie stars.",
+                    model: model,
+                })];
             case 1:
                 personalTrainerAssistance = _a.sent();
-                console.log(personalTrainerAssistance.id);
+                console.log("assistant id", personalTrainerAssistance.id);
                 return [4 /*yield*/, client.beta.threads.create({
                         messages: [
                             {
@@ -64,8 +63,69 @@ var openai_1 = require("openai");
                     })];
             case 2:
                 thread = _a.sent();
-                console.log(thread.id);
+                console.log("thread id", thread.id);
+                assistantId = personalTrainerAssistance.id;
+                threadId = thread.id;
+                messageP = "What are the best exercises to lose fat and build lean muscles?";
+                return [4 /*yield*/, client.beta.threads.messages.create(threadId, {
+                        role: "user",
+                        content: messageP,
+                    })];
+            case 3:
+                message = _a.sent();
+                return [4 /*yield*/, client.beta.threads.runs.create(threadId, {
+                        assistant_id: assistantId,
+                        instructions: "Please address the user as Samuel",
+                    })];
+            case 4:
+                run = _a.sent();
+                runId = run.id;
+                console.log("run id", runId);
+                return [4 /*yield*/, client.beta.threads.runs.retrieve(threadId, runId)];
+            case 5:
+                runsRetrieval = _a.sent();
+                console.log(runsRetrieval);
+                if (runsRetrieval.completed_at) {
+                    console.log("elapsed time", runsRetrieval.completed_at - runsRetrieval.created_at);
+                }
+                return [4 /*yield*/, client.beta.threads.messages.list(threadId)];
+            case 6:
+                messagesResponse = _a.sent();
+                response = messagesResponse.data[0].content[0];
+                console.log("Final response:", response);
                 return [2 /*return*/];
         }
     });
 }); })();
+// const assistantId = "asst_HVdVKNDQrjSbvOuR4szAK4Q6";
+// const threadId = "thread_cHhaIo4d5ExkMkjEp3O2jnlW";
+// //Create a message
+// const messageP =
+//   "What are the best exercises to lose fat and build lean muscles?";
+// const message = await client.beta.threads.messages.create(threadId, {
+//   role: "user",
+//   content: messageP,
+// });
+// //Run the assistant
+// const run = await client.beta.threads.runs.create(threadId, {
+//   assistant_id: assistantId,
+//   instructions: "Please address the user as Samuel",
+// });
+// const runId = run.id;
+// //client, threadId, runId, sleepInterval
+// const waitForRunCompletion = async () => {
+//   const runsRetrieval = await client.beta.threads.runs.retrieve(
+//     threadId,
+//     runId
+//   );
+//   if (runsRetrieval.completed_at) {
+//     console.log(
+//       "elapsed time",
+//       runsRetrieval.completed_at - runsRetrieval.created_at
+//     );
+//   }
+//   const messagesResponse = await client.beta.threads.messages.list(threadId);
+//   const response = messagesResponse.data[0].content[0];
+//   console.log("Final response:", response);
+// };
+// waitForRunCompletion();

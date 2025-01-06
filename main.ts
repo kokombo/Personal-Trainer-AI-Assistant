@@ -2,10 +2,10 @@ import * as dotenv from "dotenv";
 dotenv.config();
 import { OpenAI } from "openai";
 
-(async () => {
-  const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-  const model = "gpt-4o-mini";
+const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const model = "gpt-4o-mini";
 
+(async () => {
   // Create an assistant
   const personalTrainerAssistance = await client.beta.assistants.create({
     name: "Personal Trainer",
@@ -14,7 +14,7 @@ import { OpenAI } from "openai";
     model,
   });
 
-  console.log(personalTrainerAssistance.id);
+  console.log("assistant id", personalTrainerAssistance.id);
 
   // Create a thread
   const thread = await client.beta.threads.create({
@@ -27,5 +27,49 @@ import { OpenAI } from "openai";
     ],
   });
 
-  console.log(thread.id);
+  console.log("thread id", thread.id);
+
+  const assistantId = personalTrainerAssistance.id;
+  const threadId = thread.id;
+
+  //Create a message
+  const messageP =
+    "What are the best exercises to lose fat and build lean muscles?";
+
+  const message = await client.beta.threads.messages.create(threadId, {
+    role: "user",
+    content: messageP,
+  });
+
+  //Run the assistant
+  const run = await client.beta.threads.runs.create(threadId, {
+    assistant_id: assistantId,
+    instructions: "Please address the user as Samuel",
+  });
+
+  const runId = run.id;
+
+  console.log("run id", runId);
+
+  const runsRetrieval = await client.beta.threads.runs.retrieve(
+    threadId,
+    runId
+  );
+
+  console.log(runsRetrieval);
+
+  if (runsRetrieval.completed_at) {
+    console.log(
+      "elapsed time",
+      runsRetrieval.completed_at - runsRetrieval.created_at
+    );
+  }
+
+  const messagesResponse = await client.beta.threads.messages.list(threadId);
+  const response = messagesResponse.data[0].content[0];
+  console.log("Final response:", response);
+
+  //Steps logs
+  const steps = await client.beta.threads.runs.steps.list(threadId, runId);
+  console.log("steps", steps);
 })();
